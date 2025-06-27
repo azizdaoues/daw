@@ -16,7 +16,6 @@ pipeline {
         stage('Composer Install') {
             steps {
                 bat 'composer install'
-                bat 'composer require --dev infection/infection'
             }
         }
 
