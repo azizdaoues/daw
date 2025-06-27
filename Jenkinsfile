@@ -30,15 +30,8 @@ pipeline {
             steps {
                 withSonarQubeEnv('ayoub') {
                     bat 'vendor\\bin\\phpunit'
-                    bat '''
-                    sonar-scanner ^
-                      -Dsonar.projectKey=laravel-app ^
-                      -Dsonar.php.coverage.reportPaths=coverage.xml ^
-                      -Dsonar.sources=app ^
-                      -Dsonar.tests=tests ^
-                      -Dsonar.host.url=%SONAR_HOST_URL% ^
-                      -Dsonar.login=%SONAR_AUTH_TOKEN%'
-                    '''
+                    bat '"C:\\Users\\MSI\\Downloads\\sonar-scanner-cli-7.1.0.4889-windows-x64\\sonar-scanner-7.1.0.4889-windows-x64\\bin\\sonar-scanner.bat" -Dsonar.projectKey=laravel-app -Dsonar.php.coverage.reportPaths=coverage.xml -Dsonar.sources=app -Dsonar.tests=tests -Dsonar.host.url=http://localhost:9000 -Dsonar.login=%SONAR_AUTH_TOKEN%'
+
                 }
             }
         }
