@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        SONARQUBE_SERVER = 'SonarQube' // Nom configuré dans Jenkins
+        SONARQUBE_SERVER = 'ayoub' // Nom configuré dans Jenkins
         DOCKER_IMAGE = "laravel-app:latest"
     }
 
