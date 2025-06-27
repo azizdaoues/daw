@@ -29,7 +29,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('ayoub') {
-                    bat 'vendor\\bin\\phpunit --coverage-clover=coverage.xml'
+                    bat 'vendor\\bin\\phpunit'
                     bat '''
                     sonar-scanner ^
                       -Dsonar.projectKey=laravel-app ^
