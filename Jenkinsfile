@@ -28,7 +28,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
+                withSonarQubeEnv('ayoub') {
                     bat 'vendor\\bin\\phpunit --coverage-clover=coverage.xml'
                     bat '''
                     sonar-scanner ^
