@@ -33,13 +33,27 @@ RUN chown -R www-data:www-data /var/www \
 
 # Créer un script de démarrage simple
 RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+echo "Starting Laravel application..."\n\
+\n\
 # Attendre que la base de données soit prête\n\
 echo "Waiting for database..."\n\
 sleep 10\n\
 \n\
+# Vérifier que les fichiers Laravel sont présents\n\
+if [ ! -f artisan ]; then\n\
+    echo "Error: artisan file not found!"\n\
+    exit 1\n\
+fi\n\
+\n\
+echo "Starting PHP development server..."\n\
+\n\
 # Démarrer le serveur PHP\n\
-php artisan serve --host=0.0.0.0 --port=8000' > /var/www/start.sh \
+exec php artisan serve --host=0.0.0.0 --port=8000' > /var/www/start.sh \
     && chmod +x /var/www/start.sh
 
 EXPOSE 8000
-CMD ["/var/www/start.sh"]
+
+# Utiliser shell format pour CMD
+CMD /var/www/start.sh
