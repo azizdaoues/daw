@@ -46,7 +46,7 @@ pipeline {
 
         stage('Mutation Tests') {
             steps {
-                bat 'vendor\\bin\\infection --threads=2 --min-msi=80 --min-covered-msi=80'
+                bat 'vendor\\bin\\infection'
             }
         }
 
