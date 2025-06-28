@@ -186,6 +186,19 @@ pipeline {
                     }
                 }
                 
+                // Exécuter les seeders pour peupler la base de données
+                script {
+                    try {
+                        echo "🌱 Running database seeders..."
+                        bat 'docker-compose exec -T app php artisan db:seed --force'
+                        echo "✅ Database seeding completed successfully"
+                    } catch (Exception e) {
+                        echo "❌ Database seeding failed: ${e.getMessage()}"
+                        // Ne pas faire échouer le pipeline si le seeding échoue
+                        echo "⚠️ Continuing deployment despite seeding failure"
+                    }
+                }
+                
                 // Vérifier le statut final des services
                 bat 'docker-compose ps'
                 
