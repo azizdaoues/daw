@@ -47,7 +47,6 @@ pipeline {
         stage('Mutation Tests') {
             steps {
                 bat 'copy .env .env.backup'
-                bat 'copy .env.example .env'
                 bat 'php artisan key:generate'
                 bat 'vendor\\bin\\phpunit --coverage-clover=coverage.xml'
                 bat 'vendor\\bin\\infection --threads=2 --coverage=coverage.xml'
