@@ -107,6 +107,38 @@ pipeline {
                 // Vérifier à nouveau le statut avant les migrations
                 bat 'docker-compose ps'
                 
+                // Attendre que le conteneur app soit complètement prêt
+                script {
+                    def maxWaitTime = 60 // 60 secondes max d'attente
+                    def waitTime = 0
+                    def containerReady = false
+                    
+                    while (waitTime < maxWaitTime && !containerReady) {
+                        try {
+                            // Vérifier si le conteneur est en cours d'exécution
+                            def status = bat(script: 'docker-compose ps app', returnStdout: true).trim()
+                            if (status.contains('Up')) {
+                                // Tester si le conteneur répond
+                                bat 'docker-compose exec -T app php --version'
+                                containerReady = true
+                                echo "✅ Container is ready after ${waitTime} seconds"
+                            } else {
+                                echo "⏳ Container not ready yet, waiting..."
+                                bat 'powershell -Command "Start-Sleep -Seconds 5"'
+                                waitTime += 5
+                            }
+                        } catch (Exception e) {
+                            echo "⏳ Container not responding yet, waiting..."
+                            bat 'powershell -Command "Start-Sleep -Seconds 5"'
+                            waitTime += 5
+                        }
+                    }
+                    
+                    if (!containerReady) {
+                        error "❌ Container failed to become ready after ${maxWaitTime} seconds"
+                    }
+                }
+                
                 // Exécuter les migrations avec retry et meilleure gestion d'erreur
                 script {
                     def maxRetries = 3
