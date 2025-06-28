@@ -47,8 +47,8 @@ pipeline {
             steps {
                 bat 'copy .env .env.backup'
                 bat 'php artisan key:generate'
-                bat 'php -d pcov.enabled=1 -d pcov.directory=app vendor\\bin\\phpunit --coverage-clover=coverage.xml'
-                bat 'vendor\\bin\\infection --threads=2 --coverage=coverage.xml'
+                bat 'vendor\\bin\\phpunit'
+                bat 'vendor\\bin\\infection --threads=2'
             }
         }
 
