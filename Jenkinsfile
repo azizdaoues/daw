@@ -16,7 +16,6 @@ pipeline {
         stage('Composer Install') {
             steps {
                 bat 'composer install'
-                bat 'composer config allow-plugins.infection/extension-installer true'
                 bat 'composer require --dev infection/infection'
             }
         }
@@ -31,9 +30,8 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('ayoub') {
-                    bat 'vendor\\bin\\phpunit'
+                    bat 'php -d pcov.enabled=1 -d pcov.directory=app vendor\\bin\\phpunit --coverage-clover=coverage.xml'
                     bat '"C:\\Users\\MSI\\Downloads\\sonar-scanner-cli-7.1.0.4889-windows-x64\\sonar-scanner-7.1.0.4889-windows-x64\\bin\\sonar-scanner.bat" -Dsonar.projectKey=laravel-app -Dsonar.php.coverage.reportPaths=coverage.xml -Dsonar.sources=app -Dsonar.tests=tests -Dsonar.host.url=http://localhost:9000 -Dsonar.login=%SONAR_AUTH_TOKEN%'
-
                 }
             }
         }
@@ -48,7 +46,7 @@ pipeline {
             steps {
                 bat 'copy .env .env.backup'
                 bat 'php artisan key:generate'
-                bat 'vendor\\bin\\phpunit --coverage-clover=coverage.xml'
+                bat 'php -d pcov.enabled=1 -d pcov.directory=app vendor\\bin\\phpunit --coverage-clover=coverage.xml'
                 bat 'vendor\\bin\\infection --threads=2 --coverage=coverage.xml'
             }
         }
