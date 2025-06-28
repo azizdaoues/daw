@@ -55,7 +55,6 @@ pipeline {
         stage('Mutation Tests') {
             steps {
                 bat 'copy .env .env.backup'
-                bat 'copy .env.example .env'
                 bat 'php artisan key:generate'
                 bat 'vendor\\bin\\phpunit --log-junit=reports/mutation-tests.xml'
                 // Mutation testing requires code coverage extensions (xdebug/pcov) not available on Windows
