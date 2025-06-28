@@ -3,7 +3,6 @@ pipeline {
 
     environment {
         SONARQUBE_SERVER = 'ayoub' // Nom configuré dans Jenkins
-        DOCKER_IMAGE = "laravel-app:latest"
     }
 
     stages {
@@ -13,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('Composer Install') {
+        stage('Install Dependencies') {
             steps {
                 bat 'composer install'
                 bat 'composer config allow-plugins.infection/extension-installer true'
@@ -21,47 +20,114 @@ pipeline {
             }
         }
 
-        stage('Trivy Scan') {
-            steps {
-                bat 'docker build -t %DOCKER_IMAGE% .'
-                bat 'docker run --rm -v //var/run/docker.sock:/var/run/docker.sock aquasec/trivy image %DOCKER_IMAGE%'
+        stage('Tests & Security Scan') {
+            parallel {
+                stage('Unit Tests') {
+                    steps {
+                        bat 'vendor\\bin\\phpunit --testsuite=Unit --log-junit=reports/unit-tests.xml --coverage-html=reports/unit-coverage'
+                    }
+                }
+                stage('Feature Tests') {
+                    steps {
+                        bat 'vendor\\bin\\phpunit --testsuite=Feature --log-junit=reports/feature-tests.xml --coverage-html=reports/feature-coverage'
+                    }
+                }
+                stage('Security Scan Dependencies') {
+                    steps {
+                        bat 'composer audit --format=json --output=reports/security-audit.json'
+                    }
+                }
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('ayoub') {
-                    bat 'vendor\\bin\\phpunit'
+                    bat 'vendor\\bin\\phpunit --log-junit=reports/sonar-tests.xml'
                     bat '"C:\\Users\\MSI\\Downloads\\sonar-scanner-cli-7.1.0.4889-windows-x64\\sonar-scanner-7.1.0.4889-windows-x64\\bin\\sonar-scanner.bat" -Dsonar.projectKey=laravel-app -Dsonar.sources=app -Dsonar.tests=tests -Dsonar.host.url=http://localhost:9000 -Dsonar.login=%SONAR_AUTH_TOKEN%'
                 }
-            }
-        }
-
-        stage('Unit Tests') {
-            steps {
-                bat 'vendor\\bin\\phpunit'
             }
         }
 
         stage('Mutation Tests') {
             steps {
                 bat 'copy .env .env.backup'
+                bat 'copy .env.example .env'
                 bat 'php artisan key:generate'
-                bat 'vendor\\bin\\phpunit'
+                bat 'vendor\\bin\\phpunit --log-junit=reports/mutation-tests.xml'
+                // Mutation testing requires code coverage extensions (xdebug/pcov) not available on Windows
+                // bat 'vendor\\bin\\infection --threads=2 --noop'
                 echo 'Mutation testing skipped - requires code coverage extensions not available on Windows'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build with Docker Compose') {
             steps {
-                bat 'docker build -t %DOCKER_IMAGE% .'
+                bat 'docker-compose build'
+            }
+        }
+
+        stage('Docker Image Security Scan') {
+            steps {
+                bat 'for /f "tokens=*" %%i in (\'docker-compose images -q app\') do set IMAGE_ID=%%i'
+                bat 'docker run --rm -v //var/run/docker.sock:/var/run/docker.sock aquasec/trivy image %IMAGE_ID% --format json --output reports/trivy-scan.json'
             }
         }
 
         stage('Deploy') {
             steps {
-                bat 'docker run -d --rm -p 9000:9000 %DOCKER_IMAGE%'
+                bat 'docker-compose up -d'
             }
+        }
+    }
+
+    post {
+        always {
+            // Publier les rapports de tests JUnit
+            publishTestResults testResultsPattern: 'reports/*.xml'
+            
+            // Publier les rapports de couverture HTML
+            publishHTML([
+                allowMissing: false,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'reports',
+                reportFiles: '**/index.html',
+                reportName: 'Test Coverage Reports'
+            ])
+            
+            // Publier les rapports de sécurité
+            publishHTML([
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'reports',
+                reportFiles: 'security-audit.json',
+                reportName: 'Security Audit Report'
+            ])
+            
+            // Publier le rapport Trivy
+            publishHTML([
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'reports',
+                reportFiles: 'trivy-scan.json',
+                reportName: 'Docker Security Scan Report'
+            ])
+        }
+        
+        success {
+            echo 'Pipeline completed successfully! All tests passed and reports generated.'
+        }
+        
+        failure {
+            echo 'Pipeline failed! Check the test reports for details.'
+        }
+        
+        cleanup {
+            // Nettoyer les fichiers temporaires
+            bat 'if exist reports rmdir /s /q reports'
         }
     }
 }
