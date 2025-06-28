@@ -25,7 +25,5 @@
     "bootstrap": "vendor/autoload.php",
     "initialTestsPhpOptions": "-d zend_extension=xdebug.so",
     "minMsi": 80,
-    "minCoveredMsi": 80,
-    "threads": 2,
-    "ignoreSourceCodeOnTests": true
+    "minCoveredMsi": 80
 } 
