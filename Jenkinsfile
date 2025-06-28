@@ -25,13 +25,13 @@ pipeline {
                 stage('Unit Tests') {
                     steps {
                         bat 'if not exist reports mkdir reports'
-                        bat 'vendor\\bin\\phpunit --testsuite=Unit --log-junit=reports/unit-tests.xml'
+                        bat 'vendor\\bin\\phpunit --testsuite=Unit --log-junit=reports/unit-tests.xml --testdox-html=reports/unit-tests.html'
                     }
                 }
                 stage('Feature Tests') {
                     steps {
                         bat 'if not exist reports mkdir reports'
-                        bat 'vendor\\bin\\phpunit --testsuite=Feature --log-junit=reports/feature-tests.xml'
+                        bat 'vendor\\bin\\phpunit --testsuite=Feature --log-junit=reports/feature-tests.xml --testdox-html=reports/feature-tests.html'
                     }
                 }
                 stage('Security Scan Dependencies') {
@@ -46,7 +46,8 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('ayoub') {
-                    bat 'vendor\\bin\\phpunit --log-junit=reports/sonar-tests.xml'
+                    bat 'if not exist reports mkdir reports'
+                    bat 'vendor\\bin\\phpunit --log-junit=reports/sonar-tests.xml --testdox-html=reports/sonar-tests.html'
                     bat '"C:\\Users\\MSI\\Downloads\\sonar-scanner-cli-7.1.0.4889-windows-x64\\sonar-scanner-7.1.0.4889-windows-x64\\bin\\sonar-scanner.bat" -Dsonar.projectKey=laravel-app -Dsonar.sources=app -Dsonar.tests=tests -Dsonar.host.url=http://localhost:9000 -Dsonar.login=%SONAR_AUTH_TOKEN%'
                 }
             }
@@ -56,7 +57,8 @@ pipeline {
             steps {
                 bat 'copy .env .env.backup'
                 bat 'php artisan key:generate'
-                bat 'vendor\\bin\\phpunit --log-junit=reports/mutation-tests.xml'
+                bat 'if not exist reports mkdir reports'
+                bat 'vendor\\bin\\phpunit --log-junit=reports/mutation-tests.xml --testdox-html=reports/mutation-tests.html'
                 // Mutation testing requires code coverage extensions (xdebug/pcov) not available on Windows
                 // bat 'vendor\\bin\\infection --threads=2 --noop'
                 echo 'Mutation testing skipped - requires code coverage extensions not available on Windows'
@@ -65,7 +67,9 @@ pipeline {
 
         stage('Build with Docker Compose') {
             steps {
-                bat 'docker-compose build'
+                // Supprimer les anciennes images pour éviter les conflits
+                bat 'docker-compose down --rmi all --volumes --remove-orphans'
+                bat 'docker-compose build --no-cache'
             }
         }
 
@@ -85,39 +89,51 @@ pipeline {
 
     post {
         always {
-            // Archiver les rapports de tests JUnit
-            archiveArtifacts artifacts: 'reports/*.xml', allowEmptyArchive: true
+            // Archiver les rapports de tests HTML (plus lisibles)
+            archiveArtifacts artifacts: 'reports/*.html', allowEmptyArchive: true
             
             // Archiver les rapports de sécurité
             archiveArtifacts artifacts: 'reports/*.json', allowEmptyArchive: true
             
             // Afficher un résumé des rapports
             script {
-                if (fileExists('reports/unit-tests.xml')) {
-                    echo 'Unit tests report generated successfully'
+                if (fileExists('reports/unit-tests.html')) {
+                    echo '✅ Unit tests HTML report generated successfully'
                 }
-                if (fileExists('reports/feature-tests.xml')) {
-                    echo 'Feature tests report generated successfully'
+                if (fileExists('reports/feature-tests.html')) {
+                    echo '✅ Feature tests HTML report generated successfully'
+                }
+                if (fileExists('reports/sonar-tests.html')) {
+                    echo '✅ SonarQube tests HTML report generated successfully'
+                }
+                if (fileExists('reports/mutation-tests.html')) {
+                    echo '✅ Mutation tests HTML report generated successfully'
                 }
                 if (fileExists('reports/security-audit.json')) {
-                    echo 'Security audit report generated successfully'
+                    echo '✅ Security audit report generated successfully'
                 }
                 if (fileExists('reports/trivy-scan.json')) {
-                    echo 'Docker security scan report generated successfully'
+                    echo '✅ Docker security scan report generated successfully'
                 }
             }
         }
         
         success {
-            echo 'Pipeline completed successfully! All tests passed and reports generated.'
-            echo 'Check the "Build Artifacts" section to download the reports.'
+            echo '🎉 Pipeline completed successfully! All tests passed and reports generated.'
+            echo '📊 Check the "Build Artifacts" section to download the HTML reports.'
+            echo '📋 HTML reports are much more readable than XML files.'
         }
         
         failure {
-            echo 'Pipeline failed! Check the test reports for details.'
-            echo 'Check the "Build Artifacts" section to download the reports.'
+            echo '❌ Pipeline failed! Check the test reports for details.'
+            echo '📊 Check the "Build Artifacts" section to download the HTML reports.'
         }
         
- 
+        cleanup {
+            // Nettoyer les fichiers temporaires
+            bat 'if exist reports rmdir /s /q reports'
+            // Nettoyer les images Docker non utilisées
+            bat 'docker system prune -f'
+        }
     }
 }
