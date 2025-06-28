@@ -117,9 +117,6 @@ pipeline {
             echo 'Pipeline failed! Check the test reports for details.'
         }
         
-        cleanup {
-            // Nettoyer les fichiers temporaires
-            bat 'if exist reports rmdir /s /q reports'
-        }
+    
     }
 }
