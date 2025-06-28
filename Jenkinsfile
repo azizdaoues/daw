@@ -72,7 +72,7 @@ pipeline {
         stage('Docker Image Security Scan') {
             steps {
                 bat 'if not exist reports mkdir reports'
-                bat 'docker run --rm -v //var/run/docker.sock:/var/run/docker.sock aquasec/trivy image laravel-app --format json --output reports/trivy-scan.json'
+                bat 'docker run --rm -v //var/run/docker.sock:/var/run/docker.sock aquasec/trivy image laravel-app --format json > reports\\trivy-scan.json'
             }
         }
 
