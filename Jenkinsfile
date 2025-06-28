@@ -89,6 +89,15 @@ pipeline {
                 bat 'docker-compose down'
                 bat 'docker container prune -f'
                 bat 'docker-compose up -d'
+                
+                // Attendre que les services soient prêts
+                bat 'timeout /t 15 /nobreak'
+                
+                // Exécuter les migrations
+                bat 'docker-compose exec -T app php artisan migrate --force'
+                
+                // Vérifier le statut des services
+                bat 'docker-compose ps'
             }
         }
     }
