@@ -23,7 +23,7 @@
     },
     "testFramework": "phpunit",
     "bootstrap": "vendor/autoload.php",
-    "initialTestsPhpOptions": "-d zend_extension=xdebug.so",
+    "coverage": "coverage.xml",
     "minMsi": 80,
     "minCoveredMsi": 80
 } 
