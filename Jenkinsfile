@@ -91,7 +91,7 @@ pipeline {
                 bat 'docker-compose up -d'
                 
                 // Attendre que les services soient prêts
-                bat 'timeout /t 15 /nobreak'
+                bat 'powershell -Command "Start-Sleep -Seconds 15"'
                 
                 // Exécuter les migrations
                 bat 'docker-compose exec -T app php artisan migrate --force'
