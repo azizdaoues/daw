@@ -221,11 +221,6 @@ pipeline {
             echo '📊 Check the "Build Artifacts" section to download the detailed HTML reports.'
         }
         
-        cleanup {
-            // Nettoyer les fichiers temporaires
-            bat 'if exist reports rmdir /s /q reports'
-            // Nettoyer les images Docker non utilisées
-            bat 'docker system prune -f'
-        }
+       
     }
 }
