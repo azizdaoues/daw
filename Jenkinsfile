@@ -93,19 +93,53 @@ pipeline {
                 bat 'docker-compose up -d'
                 
                 // Attendre que les services soient prêts
-                bat 'powershell -Command "Start-Sleep -Seconds 20"'
+                bat 'powershell -Command "Start-Sleep -Seconds 30"'
                 
                 // Vérifier le statut des services
                 bat 'docker-compose ps'
                 
-                // Attendre que le service app soit prêt
+                // Vérifier que le service app est bien démarré
                 bat 'docker-compose logs app'
                 
-                // Exécuter les migrations avec retry
-                bat 'docker-compose exec -T app php artisan migrate --force || echo "Migration failed, retrying..." && powershell -Command "Start-Sleep -Seconds 10" && docker-compose exec -T app php artisan migrate --force'
+                // Attendre que la base de données soit prête
+                bat 'powershell -Command "Start-Sleep -Seconds 15"'
+                
+                // Vérifier à nouveau le statut avant les migrations
+                bat 'docker-compose ps'
+                
+                // Exécuter les migrations avec retry et meilleure gestion d'erreur
+                script {
+                    def maxRetries = 3
+                    def retryCount = 0
+                    def migrationSuccess = false
+                    
+                    while (retryCount < maxRetries && !migrationSuccess) {
+                        try {
+                            bat 'docker-compose exec -T app php artisan migrate --force'
+                            migrationSuccess = true
+                            echo "✅ Migration completed successfully on attempt ${retryCount + 1}"
+                        } catch (Exception e) {
+                            retryCount++
+                            echo "❌ Migration attempt ${retryCount} failed: ${e.getMessage()}"
+                            if (retryCount < maxRetries) {
+                                echo "⏳ Waiting 15 seconds before retry..."
+                                bat 'powershell -Command "Start-Sleep -Seconds 15"'
+                                // Vérifier le statut des services avant de réessayer
+                                bat 'docker-compose ps'
+                            }
+                        }
+                    }
+                    
+                    if (!migrationSuccess) {
+                        error "❌ Migration failed after ${maxRetries} attempts"
+                    }
+                }
                 
                 // Vérifier le statut final des services
                 bat 'docker-compose ps'
+                
+                // Afficher les logs pour vérification
+                bat 'docker-compose logs --tail=20'
             }
         }
     }
