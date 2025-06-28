@@ -19,7 +19,30 @@ COPY . .
 
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# Créer les dossiers nécessaires et définir les permissions
+RUN mkdir -p /var/www/storage/logs \
+    && mkdir -p /var/www/storage/framework/cache \
+    && mkdir -p /var/www/storage/framework/sessions \
+    && mkdir -p /var/www/storage/framework/views \
+    && mkdir -p /var/www/bootstrap/cache
+
+# Définir les permissions correctes
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 775 /var/www/storage \
+    && chmod -R 775 /var/www/bootstrap/cache
+
+# Créer un script de démarrage
+RUN echo '#!/bin/bash\n\
+# Attendre que la base de données soit prête\n\
+echo "Waiting for database..."\n\
+sleep 10\n\
+\n\
+# Exécuter les migrations\n\
+php artisan migrate --force\n\
+\n\
+# Démarrer PHP-FPM\n\
+php-fpm' > /var/www/start.sh \
+    && chmod +x /var/www/start.sh
 
 EXPOSE 9000
-CMD ["php-fpm"]
+CMD ["/var/www/start.sh"]
