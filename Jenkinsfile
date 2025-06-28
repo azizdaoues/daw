@@ -26,14 +26,14 @@ pipeline {
                     steps {
                         bat 'if not exist reports mkdir reports'
                         bat 'powershell -ExecutionPolicy Bypass -File generate-test-report.ps1 -TestSuite unit'
-                        bat 'vendor\\bin\\phpunit --testsuite=Unit --log-junit=reports/unit-tests.xml --testdox-html=reports/unit-tests.html --verbose --colors=always --stop-on-failure'
+                        bat 'vendor\\bin\\phpunit --testsuite=Unit --log-junit=reports/unit-tests.xml --testdox-html=reports/unit-tests.html --colors=always --stop-on-failure'
                     }
                 }
                 stage('Feature Tests') {
                     steps {
                         bat 'if not exist reports mkdir reports'
                         bat 'powershell -ExecutionPolicy Bypass -File generate-test-report.ps1 -TestSuite feature'
-                        bat 'vendor\\bin\\phpunit --testsuite=Feature --log-junit=reports/feature-tests.xml --testdox-html=reports/feature-tests.html --verbose --colors=always --stop-on-failure'
+                        bat 'vendor\\bin\\phpunit --testsuite=Feature --log-junit=reports/feature-tests.xml --testdox-html=reports/feature-tests.html --colors=always --stop-on-failure'
                     }
                 }
                 stage('Security Scan Dependencies') {
@@ -49,7 +49,7 @@ pipeline {
             steps {
                 withSonarQubeEnv('ayoub') {
                     bat 'if not exist reports mkdir reports'
-                    bat 'vendor\\bin\\phpunit --log-junit=reports/sonar-tests.xml --testdox-html=reports/sonar-tests.html --verbose --colors=always'
+                    bat 'vendor\\bin\\phpunit --log-junit=reports/sonar-tests.xml --testdox-html=reports/sonar-tests.html --colors=always'
                     bat '"C:\\Users\\MSI\\Downloads\\sonar-scanner-cli-7.1.0.4889-windows-x64\\sonar-scanner-7.1.0.4889-windows-x64\\bin\\sonar-scanner.bat" -Dsonar.projectKey=laravel-app -Dsonar.sources=app -Dsonar.tests=tests -Dsonar.host.url=http://localhost:9000 -Dsonar.login=%SONAR_AUTH_TOKEN%'
                 }
             }
@@ -60,7 +60,7 @@ pipeline {
                 bat 'copy .env .env.backup'
                 bat 'php artisan key:generate'
                 bat 'if not exist reports mkdir reports'
-                bat 'vendor\\bin\\phpunit --log-junit=reports/mutation-tests.xml --testdox-html=reports/mutation-tests.html --verbose --colors=always'
+                bat 'vendor\\bin\\phpunit --log-junit=reports/mutation-tests.xml --testdox-html=reports/mutation-tests.html --colors=always'
                 // Mutation testing requires code coverage extensions (xdebug/pcov) not available on Windows
                 // bat 'vendor\\bin\\infection --threads=2 --noop'
                 echo 'Mutation testing skipped - requires code coverage extensions not available on Windows'
