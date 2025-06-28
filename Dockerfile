@@ -1,4 +1,4 @@
-FROM php:8.2-fpm
+FROM php:8.2-cli
 
 RUN apt-get update && apt-get install -y \
     libpng-dev \
@@ -31,18 +31,15 @@ RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 /var/www/storage \
     && chmod -R 775 /var/www/bootstrap/cache
 
-# Créer un script de démarrage
+# Créer un script de démarrage simple
 RUN echo '#!/bin/bash\n\
 # Attendre que la base de données soit prête\n\
 echo "Waiting for database..."\n\
 sleep 10\n\
 \n\
-# Exécuter les migrations\n\
-php artisan migrate --force\n\
-\n\
-# Démarrer PHP-FPM\n\
-php-fpm' > /var/www/start.sh \
+# Démarrer le serveur PHP\n\
+php artisan serve --host=0.0.0.0 --port=8000' > /var/www/start.sh \
     && chmod +x /var/www/start.sh
 
-EXPOSE 9000
+EXPOSE 8000
 CMD ["/var/www/start.sh"]
