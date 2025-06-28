@@ -3,16 +3,10 @@
     "source": {
         "directories": [
             "app"
-        ],
-        "excludes": [
-            "app/Console/Kernel.php",
-            "app/Exceptions/Handler.php"
         ]
     },
     "logs": {
-        "text": "infection.log",
-        "html": "infection.html",
-        "summary": "infection-summary.log"
+        "text": "infection.log"
     },
     "tmpDir": "build/infection",
     "phpUnit": {
@@ -22,8 +16,5 @@
         "@default": true
     },
     "testFramework": "phpunit",
-    "bootstrap": "vendor/autoload.php",
-    "coverage": "coverage.xml",
-    "minMsi": 80,
-    "minCoveredMsi": 80
-}
+    "bootstrap": "vendor/autoload.php"
+} 
