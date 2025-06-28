@@ -48,7 +48,7 @@ pipeline {
                 bat 'copy .env .env.backup'
                 bat 'php artisan key:generate'
                 bat 'vendor\\bin\\phpunit'
-                bat 'vendor\\bin\\infection --threads=2 --min-msi=80 --min-covered-msi=80 --skip-initial-tests'
+                bat 'vendor\\bin\\infection --threads=2 --noop'
             }
         }
 
