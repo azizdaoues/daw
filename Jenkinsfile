@@ -88,15 +88,23 @@ pipeline {
                 // S'assurer que les conteneurs sont arrêtés avant de redémarrer
                 bat 'docker-compose down'
                 bat 'docker container prune -f'
+                
+                // Démarrer les services
                 bat 'docker-compose up -d'
                 
                 // Attendre que les services soient prêts
-                bat 'powershell -Command "Start-Sleep -Seconds 15"'
-                
-                // Exécuter les migrations
-                bat 'docker-compose exec -T app php artisan migrate --force'
+                bat 'powershell -Command "Start-Sleep -Seconds 20"'
                 
                 // Vérifier le statut des services
+                bat 'docker-compose ps'
+                
+                // Attendre que le service app soit prêt
+                bat 'docker-compose logs app'
+                
+                // Exécuter les migrations avec retry
+                bat 'docker-compose exec -T app php artisan migrate --force || echo "Migration failed, retrying..." && powershell -Command "Start-Sleep -Seconds 10" && docker-compose exec -T app php artisan migrate --force'
+                
+                // Vérifier le statut final des services
                 bat 'docker-compose ps'
             }
         }
