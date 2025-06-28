@@ -71,8 +71,8 @@ pipeline {
 
         stage('Docker Image Security Scan') {
             steps {
-                bat 'for /f "tokens=*" %%i in (\'docker-compose images -q app\') do set IMAGE_ID=%%i'
-                bat 'docker run --rm -v //var/run/docker.sock:/var/run/docker.sock aquasec/trivy image %IMAGE_ID% --format json --output reports/trivy-scan.json'
+                bat 'if not exist reports mkdir reports'
+                bat 'docker run --rm -v //var/run/docker.sock:/var/run/docker.sock aquasec/trivy image laravel-app --format json --output reports/trivy-scan.json'
             }
         }
 
