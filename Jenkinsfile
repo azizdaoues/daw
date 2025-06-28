@@ -24,17 +24,20 @@ pipeline {
             parallel {
                 stage('Unit Tests') {
                     steps {
+                        bat 'if not exist reports mkdir reports'
                         bat 'vendor\\bin\\phpunit --testsuite=Unit --log-junit=reports/unit-tests.xml'
                     }
                 }
                 stage('Feature Tests') {
                     steps {
+                        bat 'if not exist reports mkdir reports'
                         bat 'vendor\\bin\\phpunit --testsuite=Feature --log-junit=reports/feature-tests.xml'
                     }
                 }
                 stage('Security Scan Dependencies') {
                     steps {
-                        bat 'composer audit --format=json > reports/security-audit.json'
+                        bat 'if not exist reports mkdir reports'
+                        bat 'composer audit --format=json > reports\\security-audit.json'
                     }
                 }
             }
