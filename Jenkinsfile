@@ -24,17 +24,17 @@ pipeline {
             parallel {
                 stage('Unit Tests') {
                     steps {
-                        bat 'vendor\\bin\\phpunit --testsuite=Unit --log-junit=reports/unit-tests.xml --coverage-html=reports/unit-coverage'
+                        bat 'vendor\\bin\\phpunit --testsuite=Unit --log-junit=reports/unit-tests.xml'
                     }
                 }
                 stage('Feature Tests') {
                     steps {
-                        bat 'vendor\\bin\\phpunit --testsuite=Feature --log-junit=reports/feature-tests.xml --coverage-html=reports/feature-coverage'
+                        bat 'vendor\\bin\\phpunit --testsuite=Feature --log-junit=reports/feature-tests.xml'
                     }
                 }
                 stage('Security Scan Dependencies') {
                     steps {
-                        bat 'composer audit --format=json --output=reports/security-audit.json'
+                        bat 'composer audit --format=json > reports/security-audit.json'
                     }
                 }
             }
@@ -85,16 +85,6 @@ pipeline {
         always {
             // Publier les rapports de tests JUnit
             publishTestResults testResultsPattern: 'reports/*.xml'
-            
-            // Publier les rapports de couverture HTML
-            publishHTML([
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'reports',
-                reportFiles: '**/index.html',
-                reportName: 'Test Coverage Reports'
-            ])
             
             // Publier les rapports de sécurité
             publishHTML([
