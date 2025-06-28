@@ -85,38 +85,39 @@ pipeline {
 
     post {
         always {
-            // Publier les rapports de tests JUnit
-            publishTestResults testResultsPattern: 'reports/*.xml'
+            // Archiver les rapports de tests JUnit
+            archiveArtifacts artifacts: 'reports/*.xml', allowEmptyArchive: true
             
-            // Publier les rapports de sécurité
-            publishHTML([
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'reports',
-                reportFiles: 'security-audit.json',
-                reportName: 'Security Audit Report'
-            ])
+            // Archiver les rapports de sécurité
+            archiveArtifacts artifacts: 'reports/*.json', allowEmptyArchive: true
             
-            // Publier le rapport Trivy
-            publishHTML([
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'reports',
-                reportFiles: 'trivy-scan.json',
-                reportName: 'Docker Security Scan Report'
-            ])
+            // Afficher un résumé des rapports
+            script {
+                if (fileExists('reports/unit-tests.xml')) {
+                    echo 'Unit tests report generated successfully'
+                }
+                if (fileExists('reports/feature-tests.xml')) {
+                    echo 'Feature tests report generated successfully'
+                }
+                if (fileExists('reports/security-audit.json')) {
+                    echo 'Security audit report generated successfully'
+                }
+                if (fileExists('reports/trivy-scan.json')) {
+                    echo 'Docker security scan report generated successfully'
+                }
+            }
         }
         
         success {
             echo 'Pipeline completed successfully! All tests passed and reports generated.'
+            echo 'Check the "Build Artifacts" section to download the reports.'
         }
         
         failure {
             echo 'Pipeline failed! Check the test reports for details.'
+            echo 'Check the "Build Artifacts" section to download the reports.'
         }
         
-    
+ 
     }
 }
