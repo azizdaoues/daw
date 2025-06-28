@@ -46,7 +46,7 @@ pipeline {
 
         stage('Mutation Tests') {
             steps {
-                bat 'vendor\\bin\\infection'
+                bat 'vendor\\bin\\infection --threads=2'
             }
         }
 
