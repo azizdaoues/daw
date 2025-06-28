@@ -110,14 +110,14 @@ Write-Host "🚀 Démarrage des tests pour la suite: $TestSuite"
 
 if ($TestSuite -eq "all" -or $TestSuite -eq "unit") {
     Write-Host "📋 Exécution des tests unitaires..."
-    & vendor\bin\phpunit --testsuite=Unit --log-junit="$OutputDir\unit-tests.xml" --testdox-html="$OutputDir\unit-tests-basic.html" --verbose --colors=always
+    & vendor\bin\phpunit --testsuite=Unit --log-junit="$OutputDir\unit-tests.xml" --testdox-html="$OutputDir\unit-tests-basic.html" --colors=always
     Generate-DetailedReport -TestSuite "Unit" -OutputFile "$OutputDir\unit-tests-detailed.html"
 }
 
 if ($TestSuite -eq "all" -or $TestSuite -eq "feature") {
     Write-Host "📋 Exécution des tests fonctionnels..."
-    & vendor\bin\phpunit --testsuite=Feature --log-junit="$OutputDir\feature-tests.xml" --testdox-html="$OutputDir\feature-tests-basic.html" --verbose --colors=always
+    & vendor\bin\phpunit --testsuite=Feature --log-junit="$OutputDir\feature-tests.xml" --testdox-html="$OutputDir\feature-tests-basic.html" --colors=always
     Generate-DetailedReport -TestSuite "Feature" -OutputFile "$OutputDir\feature-tests-detailed.html"
 }
 
-Write-Host "✅ Génération des rapports terminée!" 
+Write-Host "✅ Génération des rapports terminée!"
