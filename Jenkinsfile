@@ -115,13 +115,26 @@ pipeline {
                     
                     while (waitTime < maxWaitTime && !containerReady) {
                         try {
+                            // Afficher les logs du conteneur pour debug
+                            echo "=== Container logs ==="
+                            bat 'docker-compose logs app'
+                            echo "====================="
+                            
                             // Vérifier si le conteneur est en cours d'exécution
                             def status = bat(script: 'docker-compose ps app', returnStdout: true).trim()
+                            echo "Container status: ${status}"
+                            
                             if (status.contains('Up')) {
-                                // Tester si le conteneur répond
-                                bat 'docker-compose exec -T app php --version'
-                                containerReady = true
-                                echo "✅ Container is ready after ${waitTime} seconds"
+                                // Tester si le conteneur répond avec une commande simple
+                                try {
+                                    bat 'docker-compose exec -T app echo "Container is responding"'
+                                    containerReady = true
+                                    echo "✅ Container is ready after ${waitTime} seconds"
+                                } catch (Exception e) {
+                                    echo "⏳ Container is Up but not responding yet, waiting..."
+                                    bat 'powershell -Command "Start-Sleep -Seconds 5"'
+                                    waitTime += 5
+                                }
                             } else {
                                 echo "⏳ Container not ready yet, waiting..."
                                 bat 'powershell -Command "Start-Sleep -Seconds 5"'
@@ -135,6 +148,12 @@ pipeline {
                     }
                     
                     if (!containerReady) {
+                        echo "❌ Container failed to become ready after ${maxWaitTime} seconds"
+                        echo "=== Final container status ==="
+                        bat 'docker-compose ps'
+                        echo "=== Final container logs ==="
+                        bat 'docker-compose logs app'
+                        echo "============================"
                         error "❌ Container failed to become ready after ${maxWaitTime} seconds"
                     }
                 }
