@@ -25,13 +25,15 @@ pipeline {
                 stage('Unit Tests') {
                     steps {
                         bat 'if not exist reports mkdir reports'
-                        bat 'vendor\\bin\\phpunit --testsuite=Unit --log-junit=reports/unit-tests.xml --testdox-html=reports/unit-tests.html'
+                        bat 'powershell -ExecutionPolicy Bypass -File generate-test-report.ps1 -TestSuite unit'
+                        bat 'vendor\\bin\\phpunit --testsuite=Unit --log-junit=reports/unit-tests.xml --testdox-html=reports/unit-tests.html --verbose --colors=always --stop-on-failure'
                     }
                 }
                 stage('Feature Tests') {
                     steps {
                         bat 'if not exist reports mkdir reports'
-                        bat 'vendor\\bin\\phpunit --testsuite=Feature --log-junit=reports/feature-tests.xml --testdox-html=reports/feature-tests.html'
+                        bat 'powershell -ExecutionPolicy Bypass -File generate-test-report.ps1 -TestSuite feature'
+                        bat 'vendor\\bin\\phpunit --testsuite=Feature --log-junit=reports/feature-tests.xml --testdox-html=reports/feature-tests.html --verbose --colors=always --stop-on-failure'
                     }
                 }
                 stage('Security Scan Dependencies') {
@@ -47,7 +49,7 @@ pipeline {
             steps {
                 withSonarQubeEnv('ayoub') {
                     bat 'if not exist reports mkdir reports'
-                    bat 'vendor\\bin\\phpunit --log-junit=reports/sonar-tests.xml --testdox-html=reports/sonar-tests.html'
+                    bat 'vendor\\bin\\phpunit --log-junit=reports/sonar-tests.xml --testdox-html=reports/sonar-tests.html --verbose --colors=always'
                     bat '"C:\\Users\\MSI\\Downloads\\sonar-scanner-cli-7.1.0.4889-windows-x64\\sonar-scanner-7.1.0.4889-windows-x64\\bin\\sonar-scanner.bat" -Dsonar.projectKey=laravel-app -Dsonar.sources=app -Dsonar.tests=tests -Dsonar.host.url=http://localhost:9000 -Dsonar.login=%SONAR_AUTH_TOKEN%'
                 }
             }
@@ -58,7 +60,7 @@ pipeline {
                 bat 'copy .env .env.backup'
                 bat 'php artisan key:generate'
                 bat 'if not exist reports mkdir reports'
-                bat 'vendor\\bin\\phpunit --log-junit=reports/mutation-tests.xml --testdox-html=reports/mutation-tests.html'
+                bat 'vendor\\bin\\phpunit --log-junit=reports/mutation-tests.xml --testdox-html=reports/mutation-tests.html --verbose --colors=always'
                 // Mutation testing requires code coverage extensions (xdebug/pcov) not available on Windows
                 // bat 'vendor\\bin\\infection --threads=2 --noop'
                 echo 'Mutation testing skipped - requires code coverage extensions not available on Windows'
@@ -67,8 +69,9 @@ pipeline {
 
         stage('Build with Docker Compose') {
             steps {
-                // Supprimer les anciennes images pour éviter les conflits
+                // Supprimer les anciennes images et conteneurs pour éviter les conflits
                 bat 'docker-compose down --rmi all --volumes --remove-orphans'
+                bat 'docker container prune -f'
                 bat 'docker-compose build --no-cache'
             }
         }
@@ -82,6 +85,9 @@ pipeline {
 
         stage('Deploy') {
             steps {
+                // S'assurer que les conteneurs sont arrêtés avant de redémarrer
+                bat 'docker-compose down'
+                bat 'docker container prune -f'
                 bat 'docker-compose up -d'
             }
         }
@@ -89,7 +95,10 @@ pipeline {
 
     post {
         always {
-            // Archiver les rapports de tests HTML (plus lisibles)
+            // Archiver les rapports de tests HTML détaillés
+            archiveArtifacts artifacts: 'reports/*-detailed.html', allowEmptyArchive: true
+            
+            // Archiver les rapports de tests HTML basiques
             archiveArtifacts artifacts: 'reports/*.html', allowEmptyArchive: true
             
             // Archiver les rapports de sécurité
@@ -97,11 +106,11 @@ pipeline {
             
             // Afficher un résumé des rapports
             script {
-                if (fileExists('reports/unit-tests.html')) {
-                    echo '✅ Unit tests HTML report generated successfully'
+                if (fileExists('reports/unit-tests-detailed.html')) {
+                    echo '✅ Unit tests detailed HTML report generated successfully'
                 }
-                if (fileExists('reports/feature-tests.html')) {
-                    echo '✅ Feature tests HTML report generated successfully'
+                if (fileExists('reports/feature-tests-detailed.html')) {
+                    echo '✅ Feature tests detailed HTML report generated successfully'
                 }
                 if (fileExists('reports/sonar-tests.html')) {
                     echo '✅ SonarQube tests HTML report generated successfully'
@@ -120,13 +129,13 @@ pipeline {
         
         success {
             echo '🎉 Pipeline completed successfully! All tests passed and reports generated.'
-            echo '📊 Check the "Build Artifacts" section to download the HTML reports.'
-            echo '📋 HTML reports are much more readable than XML files.'
+            echo '📊 Check the "Build Artifacts" section to download the detailed HTML reports.'
+            echo '📋 Detailed reports show test execution details, timing, and results.'
         }
         
         failure {
             echo '❌ Pipeline failed! Check the test reports for details.'
-            echo '📊 Check the "Build Artifacts" section to download the HTML reports.'
+            echo '📊 Check the "Build Artifacts" section to download the detailed HTML reports.'
         }
         
         cleanup {
