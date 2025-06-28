@@ -16,6 +16,7 @@ pipeline {
         stage('Composer Install') {
             steps {
                 bat 'composer install'
+                bat 'composer config allow-plugins.infection/extension-installer true'
                 bat 'composer require --dev infection/infection'
             }
         }
